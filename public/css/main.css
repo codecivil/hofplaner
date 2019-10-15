@@ -1,0 +1,239 @@
+* { 
+	font-family: Verdana, Arial, Helvetica, sans-serif; 
+	font-stretch: condensed; 
+	font-size: 1em;
+}
+
+/*html { height: 100%; overflow:auto; }
+body { height: 100%; } */
+
+html { font-size: 2vh; }
+
+/*html { overflow: hidden; font-size: 2vh; } 
+body { overflow-y: auto; overflow-x: hidden; } */
+
+body { margin: 0; }
+
+nav { font-size: 1.6em; }
+h1 { font-size: 2em; }
+
+.step {
+	display: inline-block;
+    border-radius: 50%;
+    width: 1.2em;
+    height: 1.2em;
+    padding: 0.33em;
+    background: var(--step-background);
+    border: 2px solid #000;
+    color: var(--step-foreground);
+    text-align: center;
+}
+
+.back {
+ background: url('/img/chevron-left-solid.svg');
+ height: 1.2em;
+ width: 1.2em;
+ padding: 0.33em;
+ background-repeat: no-repeat;
+ background-size: contain;
+ background-position: center center;
+ display: inline-block;
+}
+
+.section { width: 100vw; height: 100vh; padding: 0; margin: 0 auto; overflow-y: scroll; overflow-x: hidden; }
+
+.button { 
+	display: inline-block;
+	box-shadow: 0.1em 0.1em 0.1em #ddd;
+	width: 5em;
+	text-align: center;
+	padding: 1em;	
+}
+
+.button.yes {
+	background: var(--yes);
+}
+
+.button.no {
+	background: var(--no);
+}
+
+label[for^="submit"] {
+	display: inline-block;
+	margin: 1em auto;
+	width: 1.5em;
+	height: 1.5em;
+	text-align: center;
+	padding: 1em;	
+	background: url(/img/chevron-circle-right-solid.svg);
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+}
+
+#labelSubmitOrder { background: url(/img/ticket-alt-solid.svg); }
+#labelSubmitFinished { background: url(/img/redo-alt-solid.svg); width: 1em; height: 1em;}
+
+#background {
+	position: fixed;
+	top: 0;
+	left: 0;
+	margin: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: -50;
+	text-align: center;
+	background: var(--background);
+}
+
+#planung, nav { background: var(--background); text-align:center; }
+
+nav ul { list-style: none; }
+nav li { display: inline-block; }
+
+#choosemovies label { display: block; }
+#choosemovies input[type='checkbox'] + label {
+	background: var(--neutral);
+	font-family: sans-serif;
+	font-size: 1em;
+	margin: 0 auto;
+	width: 75%;
+	text-align: center;
+	padding: 0.2em;
+}
+
+#choosemovies input[type='checkbox']:hover + label {
+	background: var(--maybe);
+}
+
+#choosemovies input[type='checkbox']:checked + label {
+	background: var(--yes);
+}
+
+#marksoldout label { display: block; }
+#marksoldout input[type='checkbox'] + label {
+	background: var(--neutral);
+	font-family: sans-serif;
+	font-size: 1em;
+	margin: 0 auto;
+	width: 75%;
+	text-align: center;
+	padding: 0.2em;
+}
+
+#marksoldout input[type='checkbox']:hover + label {
+	background: var(--maybenot);
+}
+
+#marksoldout input[type='checkbox']:checked + label {
+	background: var(--no);
+}
+
+#choosetimes table { width: 75%; margin: 0 auto; }
+#choosetimes input[type='checkbox'] + label {
+	display: inline-block;
+	background: var(--no);
+	font-family: sans-serif;
+	font-size: 1em;
+	margin: 0 auto;
+	width: 90%;
+	text-align: center;
+	padding: 0.2em;
+}
+
+#choosetimes input[type='checkbox']:hover + label {
+	background: var(--maybenot);
+}
+#choosetimes input[type='checkbox']:checked + label:hover {
+	background: var(--maybe);
+}
+
+#choosetimes input[type='checkbox']:checked + label {
+	background: var(--yes);
+}
+
+#orderwindow {
+	position: fixed;
+	top: 0;
+	left: 0;
+	margin: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: -100;
+	text-align: center;
+	background: var(--order);
+}
+
+#orderwindow.finish { background: var(--neutral); }
+
+#orderwindow #stobackground {
+	position: fixed;
+	right: 0;
+	top: 0;
+	width: 10vw;
+	text-align: center;
+	border-radius: 0 0 0 0.5em;
+	box-shadow: -0.2em 0.2em 0.2em 0.2em var(--neutral);
+	background: url(/img/ticket-alt-solid.svg);
+	background-repeat: repeat;
+	background-position: center center;
+	background-size: 10vw auto;
+
+}
+#orderwindow #stilltoorder {
+	padding: 1em 0 1em 0;
+	font-size: 3em;
+	font-weight: bold;
+	color: var(--stilltoorder-text);
+	width: 100%;
+	height: 100%;
+	background: var(--stilltoorder);
+	opacity: 0.9;
+}
+
+#orderwindow #ticketback {
+	position: fixed;
+	left: 0;
+	top: 45vh;
+	height: 10vh;
+	margin: 0;
+	padding: 0;
+	width: 5vh;
+	background: url(/img/chevron-left-solid.svg);
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-position: center center;
+}
+
+#orderwindow .button.yes {
+	width: 100%;
+	height: 2em;
+}
+
+#orderwindow .button.no {
+	width: 100%;
+	height: 2em;
+}
+
+#orderwindow .screening {
+/*	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+*/
+}
+
+#orderwindow .screening.title {
+	padding: 10.6vh;
+	font-size: 1em;
+}
+
+#orderwindow .screening.identifier {
+	padding: 12.6vh;
+	font-weight: bold;
+	font-size: 4em;
+}
+
+#orderwindow .screening.extras {
+	padding: 10.6vh;
+	font-size: 1em;
+}

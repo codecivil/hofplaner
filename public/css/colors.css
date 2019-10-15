@@ -1,0 +1,16 @@
+body {
+	--yes: #dfd;
+	--no: #fdd;
+	--neutral: #ddd;
+	--maybe: #ded;
+	--maybenot: #edd;
+	--step-background: #000;
+	--step-foreground: #fff;
+	--background: #fff;
+	--order: #ffffec;
+	--stilltoorder: #888;
+	--stilltoorder-text: #fff;	
+/* max-heights: */
+	--max-height-general: 25em;
+	--max-height-dsgvo: 200em;
+}

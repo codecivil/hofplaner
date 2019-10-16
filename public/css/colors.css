@@ -11,6 +11,6 @@ body {
 	--stilltoorder: #888;
 	--stilltoorder-text: #fff;	
 /* max-heights: */
-	--max-height-general: 25em;
-	--max-height-dsgvo: 200em;
+	--max-height-general: 100em;
+	--max-height-dsgvo: 400em;
 }

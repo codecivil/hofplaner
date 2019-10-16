@@ -38,10 +38,18 @@ $conn->close();
 	</head>
 	<body>
 		<div id="background"></div>
+		<div id="beta" onclick="toggle('beta_detail')">
+			BETA
+			<div id="beta_detail" hidden>
+				Die Software ist im Beta-Stadium und hat keinen Zweck. codecivil haftet also nicht für Schäden, die Dir durch die Software 
+				entstehen wie z.B. der Kauf sich überschneidender Vorstellungen. Falls es Dich aber beruhigt, der Autor ist vor Ort und 
+				verwendet die Anwendung für den Ticketkauf. Wenn Du Bugs findest (wenn, nicht falls!), kannst Du sie gerne melden.
+			</div>
+		</div>
 		<nav>
 			<ul>
 <!--				<li id="nav_info" onclick="toggle('info')">INFO</li> -->
-				<li id="nav_planung" onclick="toggle('planung')">DIREKT ZUR FILMPLANUNG</li>
+				<li id="nav_planung" onclick="unhide('planung')">DIREKT ZUR FILMPLANUNG</li>
 			</ul>
 		</nav>
 		<div id="info">
@@ -65,6 +73,10 @@ $conn->close();
 				<div><span class="step">5</span> Starte den Bestellablauf: Bestelle die angezeigte Vorstellung oder gib Dein Smartphone dem Kartenverkäufer.
 				Ist die Vorstellung verfügbar, klicke "ja", ansonsten "nein" und fahre mit der nächsten Vorstellung fort. Links oben siehst Du, wieviele
 				Filme noch offen sind.
+				</div>
+				<div><span class="step">6</span> Die Software ist im Beta-Stadium und hat "keinen Zweck". <em>codecivil</em> haftet also nicht für Schäden, die
+				Dir durch die Software entstehen wie z.B. der Kauf sich überschneidender Vorstellungen auf Grund Empfehlungen dieser Anwendung. Falls es Dich aber beruhigt, der Autor ist vor Ort und verwendet
+				die Seite für den Ticketkauf. Wenn Du Bugs findest (wenn, nicht falls!), kannst Du sie gerne melden. 
 				</div>
 				<div class="button yes" onclick="unhide('planung');">Ja, alles klar! Los geht's!</div>
 			</div>
@@ -117,6 +129,7 @@ $conn->close();
 				Deinem Smartphone oder Computer ab.
 				Zum Teil sind umfangreiche Zwischenspeicher und viele Rechenoperationen nötig. Auf älteren Geräten kann es daher passieren, dass die
 				Software nicht funktioniert.</div>
+				<div><span class="step">9</span> Die Software findest Du auf <a href="https://github.com/codecivil/hofplaner">https://github.com/codecivil/hofplaner</a>.</div>
 			</div>
 			<div class="_info title_wrapper"><div class="_info title">BY<br />CODE<br />CIVIL</div></div>
 			<input type="checkbox" hidden id="cb_cc">
@@ -278,6 +291,8 @@ $conn->close();
 			<div id="choosemovies" class="section">
 				<h1><div class="step">1</div> Welche Filme willst Du sehen?<span class="back" onclick="_back(this);">&nbsp;</span></h1>
 				<form method="POST" id="formMovies" action="" onsubmit="getMovies(this.closest('form')); return false;">
+					<input type="reset" id="resetMovies" hidden>
+					<label for="resetMovies"><div class="button reset" >Reset</div></label>
 					<?php foreach ( $_titles as $index=>$title ) {
 						?>
 						<input type="checkbox" hidden id="movie_<?php echo($index); ?>" value="<?php echo($title); ?>" name="movie[]">
@@ -354,10 +369,12 @@ $conn->close();
 					<input form="formTimes" id="submitTimes" type="submit" hidden>
 					<label for="submitTimes" id="labelSubmitTimes"></label>
 				</div>
+				<div id="computation"></div>
 			</div>
 			<div id="getresult_wrapper" class="section" hidden>
 				<h1><span class="step">4</span> So viele Optionen hast Du <span class="back" onclick="_back(this);">&nbsp;</span></h1>				
 				<div id="getresult"></div>
+				<br />
 				<div>Klicke das Ticket, um die Ticketabfrage zu starten.</div>
 				<form action="" onsubmit="prepareStorage(startOrder); return false;">
 					<input id="submitOrder" type="submit" hidden disabled>

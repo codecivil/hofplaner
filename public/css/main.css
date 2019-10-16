@@ -14,6 +14,9 @@ body { overflow-y: auto; overflow-x: hidden; } */
 
 body { margin: 0; }
 
+#beta { color: red; font-size: 1.6em; font-family: monospace; font-weight: bold; position: fixed; top: 1vh; left: 1vh; z-index: 1000; }
+#beta_detail { color: darkred; font-size: 0.8em; background: var(--background); }
+
 nav { font-size: 1.6em; }
 h1 { font-size: 2em; }
 
@@ -56,6 +59,11 @@ h1 { font-size: 2em; }
 
 .button.no {
 	background: var(--no);
+}
+
+.button.reset {
+	background: var(--no);
+	margin-bottom: 0.5em;
 }
 
 label[for^="submit"] {

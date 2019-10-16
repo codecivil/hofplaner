@@ -2,6 +2,11 @@
 //all innerText replaced by innerHTML
 //all .append by .appendChild
 //for compatibility to older browsers
+
+//config
+_hof_walktime = 1800; //blocked time after screenings (including lateness and director Q&A) for walking to next screening
+//
+
 function is_touch_device() {
   var prefixes = ' -webkit- -moz- -o- -ms- '.split(' ');
   var mq = function(query) {
@@ -24,7 +29,7 @@ function adaptTouchiness() {
 //	if ( is_touch_device() ) {
 		_onclicks = document.querySelectorAll('[onclick]');
 		_onclick = new Array();
-		for ( i = 0; i<_onclicks.length; i++) {
+		for ( var i = 0; i<_onclicks.length; i++) {
 			clickable = _onclicks[i];
 			_onclick[i] = clickable.onclick;
 			clickable.addEventListener('touchstart', _onclick[i], false);
@@ -32,7 +37,7 @@ function adaptTouchiness() {
 		}
 		_onsubmits = document.querySelectorAll('input[type="submit"]');
 		_onsubmit = new Array();
-		for ( i = 0; i<_onsubmits.length; i++ ) {
+		for ( var i = 0; i<_onsubmits.length; i++ ) {
 			clickable = _onsubmits[i];
 			console.log(_onsubmit[i]);
 			if ( clickable.parentElement.tagName == "FORM" ) {
@@ -75,7 +80,7 @@ function hide(id) {
 function toggleClass(classname) {
 	elements = document.querySelectorAll('.'+classname);
 	status = ! elements[0].checked;
-	for (i=0; i<elements.length; i++) { 
+	for ( var i=0; i<elements.length; i++) { 
 		el = elements[i];
 		el.checked = ( status == "true" ); 
 	};
@@ -92,11 +97,45 @@ function _back(el) {
 }
 
 function getMovies(form) {
-	_titleinputs = form.querySelectorAll('input:checked');
-	_titles = new Array();
-	for (i = 0; i<_titleinputs.length; i++) { _titles.push(_titleinputs[i].value); };
-	_allMovies = JSON.parse(document.getElementById('database').innerHTML);
-	_movies = _allMovies.filter(function(movie){ return ( _titles.indexOf(movie.title) != -1 ); });		
+	var _titleinputs = form.querySelectorAll('input:checked');
+	var _titles = new Array();
+	for ( var i = 0; i<_titleinputs.length; i++) { _titles.push(_titleinputs[i].value); };
+	var _allMovies = JSON.parse(document.getElementById('database').innerHTML);
+	//put long and short movies together
+	var _combinedmovies = new Array();
+	var _longmovie = new Object();
+	var _shortmovie = new Object();
+	_allMovies = _allMovies.sort((mv1,mv2)=> ( mv1.identifier > mv2.identifier )); // sort by identifier
+	for ( var i = 0; i < _allMovies.length; i++ ) {
+		if ( _allMovies[i+1] && _allMovies[i+1].identifier == _allMovies[i].identifier ) {
+			if ( ( _allMovies[i+1].unixtimeend - _allMovies[i+1].unixtimestart) > ( _allMovies[i].unixtimeend - _allMovies[i].unixtimestart ) ) {
+				_longmovie = _allMovies[i+1]; _shortmovie = _allMovies[i]; _splice = i;
+			} else {
+				_longmovie = _allMovies[i]; _shortmovie = _allMovies[i+1]; _splice = i+1;
+			}
+			_longmovie.unixtimeend += _shortmovie.unixtimeend - _shortmovie.unixtimestart;
+		}
+	}
+	var _movies = _allMovies.filter(function(movie){ return ( _titles.indexOf(movie.title) != -1 ); });
+	_combinedmovies = _movies.sort((mv1,mv2)=> ( mv1.identifier > mv2.identifier )); // sort by identifier
+	for ( var i = 0; i < _combinedmovies.length; i++ ) {
+		if ( _combinedmovies[i+1] && _combinedmovies[i+1].identifier == _combinedmovies[i].identifier ) {
+			if ( ( _combinedmovies[i+1].unixtimeend - _combinedmovies[i+1].unixtimestart) > ( _combinedmovies[i].unixtimeend - _combinedmovies[i].unixtimestart ) ) {
+				_longmovie = _combinedmovies[i+1]; _shortmovie = _combinedmovies[i]; _splice = i;
+			} else {
+				_longmovie = _combinedmovies[i]; _shortmovie = _combinedmovies[i+1]; _splice = i+1;
+			}
+			_longmovie.title += ' + '+_shortmovie.title;
+			_combinedmovies.splice(_splice,1);
+			i--;
+		}
+	}
+	//add _hof_walktime to screening
+	for ( var i = 0; i < _combinedmovies.length; i++ ) {
+		_combinedmovies[i].unixtimeend += _hof_walktime;
+	}
+	_movies = _combinedmovies.sort((mv1,mv2)=> (mv1.title > mv2.title) );
+	//			
 	document.getElementById('movieshidden').innerHTML = JSON.stringify(_movies);
 /*	phpscript = "/functions/getMovies.php";
 	var _request = new XMLHttpRequest();
@@ -111,12 +150,13 @@ function getMovies(form) {
 
 function generateFormSoldOut() {
 	el = document.getElementById('formSoldOut');
+	el.innerHTML = '';
 	_movies = JSON.parse(document.getElementById('movieshidden').innerHTML);
-	for (index=0; index<_movies.length; index++) { 
+	for ( var index=0; index<_movies.length; index++) { 
 		movie = _movies[index];
 		movie.begin = new Date(movie.unixtimestart*1000);
 		movie.end = new Date(movie.unixtimeend*1000);
-		movie.time = movie.begin.getDate()+'.'+(movie.begin.getMonth()+1)+'., '+movie.begin.getHours()+':'+movie.begin.getMinutes()+' - '+movie.end.getHours()+':'+movie.end.getMinutes();
+		movie.time = movie.begin.getDate()+'.'+(movie.begin.getMonth()+1)+'., '+movie.begin.getHours()+':'+(movie.begin.getMinutes()<10?'0':'')+movie.begin.getMinutes()+' - '+movie.end.getHours()+':'+(movie.end.getMinutes()<10?'0':'')+movie.end.getMinutes();
 		el.innerHTML += '\
 			<input type="checkbox" hidden id="soldout_'+index+'" value="'+movie.id+'"> \
 			<label for="soldout_'+index+'"> \
@@ -133,7 +173,7 @@ function generateFormSoldOut() {
 function markSoldOut(form) {
 	_soldout = form.querySelectorAll('input:checked');
 	_soldoutids = new Array();
-	for (i=0; i<_soldout.length; i++) { 
+	for ( var i=0; i<_soldout.length; i++) { 
 		option = _soldout[i];
 		_soldoutids.push(option.value);
 	};
@@ -145,7 +185,7 @@ function getTimes(form) {
 	formname = form.id;
 	_available = document.getElementById(formname).parentElement.querySelectorAll('input[form="'+formname+'"]:checked');
 	_return = new Array();
-	for (i=0; i<_available.length; i++) { 
+	for ( var i=0; i<_available.length; i++) { 
 		interval = _available[i];
 		_return.push(JSON.parse(interval.value));
 	};
@@ -157,7 +197,7 @@ function getAllTimes(form) {
 	formname = form.id;
 	_available = document.getElementById(formname).parentElement.querySelectorAll('input[form="'+formname+'"][type="checkbox"]');
 	_return = new Array();
-	for (i=0; i<_available.length; i++) { 
+	for ( var i=0; i<_available.length; i++) { 
 		interval = _available[i];
 		_return.push(JSON.parse(interval.value));
 	};
@@ -167,7 +207,7 @@ function getAllTimes(form) {
 
 function addIntervals(intervalsarray) {
 	intervalsarray = intervalsarray.sort((a,b)=>a[0]-b[0]); // sort ascending by interval begin
-	for ( i=0; i<intervalsarray.length; i++ ) {
+	for ( var i=0; i<intervalsarray.length; i++ ) {
 		//combine overlapping intervals
 		if ( intervalsarray[i+1] && intervalsarray[i][1] >= intervalsarray[i+1][0] ) {
 			intervalsarray[i][1] = intervalsarray[i+1][1];
@@ -181,7 +221,7 @@ function addIntervals(intervalsarray) {
 //minuend: array of intervals, subtrahend: one interval
 function removeIntervals(minuend,subtrahend) {
 	minuend = minuend.sort((a,b)=>a[0]-b[0]); // sort ascending by interval begin
-	for ( i=0; i<minuend.length; i++ ) {
+	for ( var i=0; i<minuend.length; i++ ) {
 		//reduce intervals when hitting the subtrahend
 		// // minuend is contained in subtrahend
 		if ( minuend[i][0] >= subtrahend[0] && minuend[i][1] <= subtrahend[1] ) {
@@ -211,7 +251,7 @@ function removeIntervals(minuend,subtrahend) {
 
 function fitsInto(intervalsarray,interval) {
 	_return = false;
-	for (i=0; i<intervalsarray.length; i++) { 
+	for (var i=0; i<intervalsarray.length; i++) { 
 		iv = intervalsarray[i];
 		if ( iv[0] <= interval[0] && iv[1] >= interval[1] ) { _return = true; }
 	};
@@ -228,6 +268,7 @@ function prepareStorage(callback) {
 }
 
 function getResults(callback,tmp) {
+	document.getElementById('computation').innerHTML = "<div class=\"button\">Mögliche Filmpläne werden berechnet...</div>";
 	document.getElementById('submitOrder').disabled = true;
 	_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	_times = JSON.parse(document.getElementById('tmp_times').innerHTML);
@@ -238,19 +279,23 @@ function getResults(callback,tmp) {
 		_movies = _movies.filter(movie=>(_soldout.indexOf(movie.id.toString()) == -1));
 	}
 	// remove movies that do not fit into the user's timetable
-	for (index=0; index<_movies.length; index++) { 
-		movie = _movies[index];
+	for ( var index=0; index<_movies.length; index++) { 
+		var movie = _movies[index];
 		var interval = [movie.unixtimestart,movie.unixtimeend];
-		if ( ! fitsInto(_times,interval) ) { _movies.splice(index,1); }
-	};
+		if ( ! fitsInto(_times,interval) ) { _movies.splice(index,1); index--; }
+	};	
 	// get titles (maybe some were removed)
 	_titles = _movies.filter((el,i,a)=>( ! a[i+1] || el.title != a[i+1].title)); //get the unique titles (from the sorted array!)
-	_impossible = _titles_before.filter(title=>( _titles.indexOf(title) == -1 ));
+	var _onlytitles = new Array(); //really only titles, not movie objects
+	for ( var i = 0; i<_titles.length; i++ ) {
+		_onlytitles.push(_titles[i].title);
+	}
+	_impossible = _titles_before.filter(title=>( _onlytitles.indexOf(title.title) == -1 ));
 	// prepare iteration
 	_movieswithtitle = new Array();
 	_prod = [1]; //combinations as multibased number representations
 	_factor = new Array();
-	for (i=0; i<_titles.length; i++) { 
+	for ( var i=0; i<_titles.length; i++) { 
 		title = _titles[i];
 		_movieswithtitle.push(_movies.filter(el=>(el.title == title.title)));
 		_prod.push(_movieswithtitle[_movieswithtitle.length-1].length*_prod[_prod.length-1]);
@@ -258,33 +303,37 @@ function getResults(callback,tmp) {
 	};
 	// now check all possibilities
 	_results = new Array();
-	document.getElementById('getresult').innerHTML = "Mögliche Filmpläne werden berechnet...";
-	for ( i = 0; i<_prod[_prod.length-1]; i++ ) {
-		_status = function(i) {
+	var _freetimes = new Array();
+	for ( var i = 0; i < _prod[_prod.length-1]; i++ ) {
+		//at i=1 the _freetimes[1] array is reduced to the first interval of _freetimes[0]; why? removeIntervals does not work, perhaps?
+		var _status = function (i) {
 			_results[i] = new Array();
-			var freetimes = _times;
+			//_freetimes[i] = _times.slice(); //clones an array
+			_freetimes[i] = JSON.parse(document.getElementById('tmp_times').innerHTML);
 			for ( j = 0; j<_titles.length; j++ ) {
-				var index = Math.floor(i/_prod[j+1]) % _factor[j];
-				var movie = _movieswithtitle[j][index];
-				var interval = [movie.unixtimestart,movie.unixtimeend];
-				if ( ! fitsInto(freetimes,interval) ) {
-					_results.splice(i,1);
-					break; 
-				} else {
-					console.log(i); console.log(_results[i]);
-					_results[i].push(movie.id);
-					freetimes = removeIntervals(freetimes,interval);	
-				}				
+				var _stat2 = function (i,j) {
+					var index = Math.floor(i/_prod[j]) % _factor[j];
+					var movie = _movieswithtitle[j][index];
+					var interval = [movie.unixtimestart,movie.unixtimeend];
+					if ( ! fitsInto(_freetimes[i],interval) ) {
+						return false; 
+					} else {
+						_results[i].push(movie.id);
+						_freetimes[i] = removeIntervals(_freetimes[i],interval);
+						return true;	
+					}
+				}(i,j);				
+				if ( ! _stat2 ) { _results.splice(i,1); break; }
 			}
 		}(i);
 	}
 	_results = _results.filter(function(result){ return result != undefined }); //reindex the array, so that length is applicable
 	switch( _results.length) {
 		case 0:
-			document.getElementById('getresult').innerHTML = "<strong>Leider ist Ihre Auswahl so nicht möglich.</strong> Bitte reduzieren Sie die Anzahl der gewählten Filme oder erweitern Sie ihre vefügbaren Zeiten.";
+			document.getElementById('getresult').innerHTML = "<strong>Leider ist Deine Auswahl so nicht möglich.</strong> Bitte reduziere die Anzahl der gewählten Filme oder erweitere Deine vefügbaren Zeiten.";
 			break;
 		case 1:
-			document.getElementById('getresult').innerHTML = "<strong>Sie haben Glück!</strong> Es gibt genau einen möglichen Filmplan.";
+			document.getElementById('getresult').innerHTML = "<strong>Glück gehabt!</strong> Es gibt genau einen möglichen Filmplan.";
 			document.getElementById('submitOrder').disabled = false;
 			break;
 		default:
@@ -292,8 +341,8 @@ function getResults(callback,tmp) {
 			document.getElementById('submitOrder').disabled = false;
 	}
 	if ( _impossible.length > 0 ) {
-		document.getElementById('getresult').innerHTML += '<p>Folgende Filme laufen aber nie, wann Sie Zeit haben:</p><ul>';
-		for (i=0; i<_impossible.length; i++) { 
+		document.getElementById('getresult').innerHTML += '<p>Folgende Filme laufen dann aber nie:</p><ul>';
+		for ( var i=0; i<_impossible.length; i++) { 
 			title = _impossible[i];
 			document.getElementById('getresult').innerHTML += '<li>'+title.title+'</li>';
 		}; 
@@ -301,6 +350,7 @@ function getResults(callback,tmp) {
 	}	
 	document.getElementById('tmp_results').innerHTML = JSON.stringify(_results);
 	if ( ! tmp ) { document.getElementById('resultshidden').innerHTML = JSON.stringify(_results); };
+	document.getElementById('computation').innerHTML += "<p>Scrolle nun nach unten, falls dies nicht automatisch passiert.</p>";
 	unhide('getresult_wrapper');
 	if (callback) { callback(); };
 }
@@ -311,7 +361,7 @@ function startOrder() {
 	if ( _results.length == 0 || ( _results.length == 1 && _results[0].length == 0 ) ) { document.getElementById('orderwindow').style.zIndex = 100; _finish(); return; }
 	_stilltoorder = _results[0].length;
 	_count = new Array();
-	for (i=0; i<_results.length; i++) { 
+	for ( var i=0; i<_results.length; i++) { 
 		_trash = function(i) {
 			result = _results[i];
 			//the idea is to order most frequently occuring screenings in the results at first
@@ -321,7 +371,7 @@ function startOrder() {
 		}(i);
 	};
 	_maxid = -1; _maxcount = 0;
-	for (i=0; i<_count.length; i++) { 
+	for ( var i=0; i<_count.length; i++) { 
 		el = _count[i];
 		if ( el != undefined && el > _maxcount ) { _maxcount = el; _maxid = i; };
 	};
@@ -355,14 +405,14 @@ function _finish() {
 		<div id="ticketback" onclick="_restore(startOrder)"></div>\
 	'
 	el.innerHTML += '<form id="formFinished" action="" onsubmit="this.parentElement.style.zIndex = -100; document.getElementById(\'submitOrder\').disabled = false; _reset(); document.getElementById(\'choosemovies\').scrollIntoView(); return false;" /><input form="formFinished" type="submit" id="submitFinished" hidden /><label for="submitFinished" id="labelSubmitFinished"></label>';
-	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Sie haben:</h3><ul>'; };
-	for (i=0; i<_available.length; i++) { 
+	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Du hast:</h3><ul>'; };
+	for ( var i=0; i<_available.length; i++) { 
 		title = _available[i];
 		el.innerHTML += '<li>'+title+'</li>';
 	};
 	if ( _available && _available.length > 0 ) { el.innerHTML += '</ul>'; }
-	if ( _unavailable && _unavailable.length > 0 ) { el.innerHTML += '<h3>Sie haben leider <em>nicht</em>:</h3><ul>'; };
-	for (i=0; i<_unavailable.length; i++) { 
+	if ( _unavailable && _unavailable.length > 0 ) { el.innerHTML += '<h3>Du hast leider <em>nicht</em>:</h3><ul>'; };
+	for ( var i=0; i<_unavailable.length; i++) { 
 		title = _unavailable[i];
 		el.innerHTML += '<li>'+title+'</li>';
 	};
@@ -374,7 +424,7 @@ function _backup() {
 	_history = document.getElementById('history');
 	categories = _history.querySelectorAll('.hist');
 //	for (let cat of categories) {
-	for (i=0; i<categories.length; i++) { 
+	for ( var i=0; i<categories.length; i++) { 
 		cat = categories[i];
 		_backupdiv = cat.querySelector('div').cloneNode(true);
 		_backupdiv.removeAttribute('id');
@@ -386,7 +436,7 @@ function _restore(callback) {
 	_history = document.getElementById('history');
 	categories = _history.querySelectorAll('.hist');
 //	for (let cat of categories){
-	for (i=0; i<categories.length; i++) { 
+	for ( var i=0; i<categories.length; i++) { 
 		cat = categories[i];
 		catsdivs = cat.querySelectorAll('div');
 		lastcat = catsdivs.length - 1;
@@ -394,15 +444,13 @@ function _restore(callback) {
 		if (lastcat > 0) { catsdivs[lastcat].remove() };
 	};
 	if (callback) { callback(); }
-	//clear bought tickets
-	document.getElementById('tmp_available').innerHTML = '[]';
 }
 
 function _reset(callback) {
 	_history = document.getElementById('history');
 	categories = _history.querySelectorAll('.hist');
 //	for (let cat of categories){
-	for (i=0; i<categories.length; i++) { 
+	for ( var i=0; i<categories.length; i++) { 
 		_trash = function(i){
 			cat = categories[i];
 			catsdivs = cat.querySelectorAll('div');
@@ -412,27 +460,33 @@ function _reset(callback) {
 			};
 		}(i);
 	};
+	//clear bought tickets
+	document.getElementById('tmp_available').innerHTML = '[]';
+	document.getElementById('tmp_unavailable').innerHTML = '[]';
+	document.getElementById('tmp_pay').innerHTML = '0';
+	document.getElementById('computation').innerHTML = '';
 	if (callback) { callback(); }
 }
 
 function _yes(id) {
 	//first, backup
 	_backup();
+	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	thismovie = _movies.filter(mov=>(mov.id == id))[0];
 	//update results
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
 	_results = _results.filter(result=>(result.indexOf(id) > -1));
-	for (i=0; i<_results.length; i++) { 
+	for ( var i=0; i<_results.length; i++) { 
 		result = _results[i];
 		result.splice(result.indexOf(id),1);	
 	};
 	document.getElementById('tmp_results').innerHTML = JSON.stringify(_results);
 	//remove title from _movies (for the case where you have to modify your search during order)
-	_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
-	for (i=0; i<_movies.length; i++) { 
+	for ( var i=0; i<_movies.length; i++) { 
 		movie = _movies[i];
 		if ( movie.title ==  thismovie.title ) {
 			_movies.splice(i,1);
+			i--;
 		}
 	};
 	document.getElementById('tmp_movies').innerHTML = JSON.stringify(_movies);
@@ -443,7 +497,7 @@ function _yes(id) {
 	document.getElementById('tmp_times').innerHTML = JSON.stringify(_times);
 	//add title to available
 	_available = JSON.parse(document.getElementById('tmp_available').innerHTML);
-	_available.push(thismovie.title);
+	_available.push(thismovie.identifier+': '+thismovie.title);
 	document.getElementById('tmp_available').innerHTML = JSON.stringify(_available);
 	//add to checkout sum
 	_pay = parseInt(document.getElementById('tmp_pay').innerHTML);
@@ -459,17 +513,20 @@ function _yes(id) {
 function _no(id) {
 	//first, backup
 	_backup();
-	thismovie = _movies.filter(mov=>(mov.id == id))[0];
+	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
+	var thismovie = _movies.filter(mov=>(mov.id == id))[0];
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
 	_stilltoorder = _results[0].length;
 	_results = _results.filter(result=>(result.indexOf(id) == -1));
 	if ( _stilltoorder > 0 && ( _results.length == 0 || ( _results.length == 1 && _results[0].length == 0 ) ) ) {
 		//remove title from _movies (for the case where you have to modify your search during order)
-		_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
-		for (i=0; i<_movies.length; i++) { 
-			movie = _movies[i];
-			if ( movie.title ==  thismovie.title ) {
+		for ( var i=0; i<_movies.length; i++) { 
+			var movie = _movies[i];
+			if ( movie.title == thismovie.title ) {
+				console.log(i);
+				console.log(movie);
 				_movies.splice(i,1);
+				i--;
 			}
 		};
 		document.getElementById('tmp_movies').innerHTML = JSON.stringify(_movies);

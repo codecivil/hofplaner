@@ -245,3 +245,5 @@ nav li { display: inline-block; }
 	padding: 10.6vh;
 	font-size: 1em;
 }
+
+#orderwindow table { margin: 0 auto; }

@@ -290,7 +290,7 @@ $conn->close();
 		<div id="planung" hidden>
 			<div id="choosemovies" class="section">
 				<h1><div class="step">1</div> Welche Filme willst Du sehen?<span class="back" onclick="_back(this);">&nbsp;</span></h1>
-				<form method="POST" id="formMovies" action="" onsubmit="getMovies(this.closest('form')); return false;">
+				<form id="formMovies" action="" onsubmit="event.preventDefault(); getMovies(this.closest('form')); return false;">
 					<input type="reset" id="resetMovies" hidden>
 					<label for="resetMovies"><div class="button reset" >Reset</div></label>
 					<?php foreach ( $_titles as $index=>$title ) {
@@ -307,13 +307,13 @@ $conn->close();
 				<h1><span class="step">2</span> Willst Du ausverkaufte Vorstellungen markieren? <span class="back" onclick="_back(this);">&nbsp;</span></h1>
 				<div class="button yes" onclick="generateFormSoldOut()">ja</div>
 				<div class="button no" onclick="hide('formSoldOut'); unhide('choosetimes')">nein</div>
-				<form id="formSoldOut" action="" onsubmit="markSoldOut(this); return false;"></form>
+				<form id="formSoldOut" action="" onsubmit="event.preventDefault(); markSoldOut(this); return false;"></form>
 			</div>
 			<div id="choosetimes" class="section" hidden>
 				<h1><span class="step">3</span> Hast Du immer Zeit? <span class="back" onclick="_back(this);">&nbsp;</span></h1>
 				<div class="button yes" onclick="hide('choosetimestable'); hide('labelSubmitTimes'); getAllTimes(document.getElementById('formTimes')); prepareStorage(getResults); return false;">ja</div>
 				<div class="button no" onclick=" unhide('labelSubmitTimes'); unhide('choosetimestable');">nein</div>
-				<form id="formTimes" action="" onsubmit="getTimes(this); prepareStorage(getResults); return false;"></form>
+				<form id="formTimes" action="" onsubmit="event.preventDefault(); getTimes(this); prepareStorage(getResults); return false;"></form>
 				<div id="choosetimestable" hidden>
 					<table id="timestable">
 						<?php
@@ -376,7 +376,7 @@ $conn->close();
 				<div id="getresult"></div>
 				<br />
 				<div>Klicke das Ticket, um die Ticketabfrage zu starten.</div>
-				<form action="" onsubmit="prepareStorage(startOrder); return false;">
+				<form action="" onsubmit="event.preventDefault(); prepareStorage(startOrder); return false;">
 					<input id="submitOrder" type="submit" hidden disabled>
 					<label for="submitOrder" id="labelSubmitOrder"></label>
 				</form>

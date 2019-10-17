@@ -20,7 +20,7 @@ Bei den Hofer Filmtagen wird die Filmnummer als `identifier` benutzt und das Kin
 
 ## Konfiguration
 ### Festival
-Der Zeitraum des Festivals ist in `php/hof_data.php` einzutragen. Der Endtag ist der Tag *nach* dem Ende des Festivals sein.
+Der Zeitraum des Festivals ist in `php/hof_data.php` einzutragen. Der Endtag ist der Tag *nach* dem Ende des Festivals.
 
 ### Mindestzeit zwischen Vorstellungen
 Am Anfang von `js/main.js`wird diese Zeit in Sekunden definiert. Sie sollte übliche Vespätungen, Q&A-Sitzungen, die Gehzeit zwischen zwei Locations sowie einen Zeitpuffer, um sicheren Einlass und akzeptable Plätze zu bekommen, enthalten. Hier ist sie auf 30 Minuten gesetzt.

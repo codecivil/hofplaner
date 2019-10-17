@@ -9,6 +9,7 @@ foreach ( $core as $component )
 
 $servername = $SESSION['servername'];
 $dbname = $SESSION['dbname'];
+$dbtable = $SESSION['dbtable'];
 $username = $SESSION['connuser'];
 $password = $SESSION['connpwd'];
 unset($SESSION);
@@ -19,7 +20,7 @@ mysqli_set_charset($conn,"utf8");
 
 //get all titles
 $stmt_array = array();
-$stmt_array['stmt'] = "SELECT * from hof2019 ORDER BY title";
+$stmt_array['stmt'] = "SELECT * from '.$dbtable.' ORDER BY title";
 $_database = execute_stmt($stmt_array,$conn,true)['result'];
 $_titles = array_unique(execute_stmt($stmt_array,$conn)['result']['title']);
 $conn->close();

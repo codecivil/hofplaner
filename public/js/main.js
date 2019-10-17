@@ -404,20 +404,22 @@ function _finish() {
 	el.innerHTML = '\
 		<div id="ticketback" onclick="_restore(startOrder)"></div>\
 	'
-	el.innerHTML += '<form id="formFinished" action="" onsubmit="this.parentElement.style.zIndex = -100; document.getElementById(\'submitOrder\').disabled = false; _reset(); document.getElementById(\'choosemovies\').scrollIntoView(); return false;" /><input form="formFinished" type="submit" id="submitFinished" hidden /><label for="submitFinished" id="labelSubmitFinished"></label>';
-	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Du hast:</h3><ul>'; };
+	el.innerHTML += '<form id="formFinished" action="" onsubmit="event.preventDefault(); this.parentElement.style.zIndex = -100; document.getElementById(\'submitOrder\').disabled = false; _reset(); document.getElementById(\'choosemovies\').scrollIntoView(); return false;" /><input form="formFinished" type="submit" id="submitFinished" hidden /><label for="submitFinished" id="labelSubmitFinished"></label>';
+	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Du hast:</h3>'; };
+	var _tablerows = '<table>'; //innerHTML must always be valid HTML, i.e tags must be closed immediately or they will be by the browser
 	for ( var i=0; i<_available.length; i++) { 
 		title = _available[i];
-		el.innerHTML += '<li>'+title+'</li>';
+		_tablerows += '<tr><td>'+title[0]+'</td><td>'+title[1]+'</td></tr>';
 	};
-	if ( _available && _available.length > 0 ) { el.innerHTML += '</ul>'; }
+	if ( _available && _available.length > 0 ) { _tablerows += '</table>'; }
+	el.innerHTML += _tablerows;
 	if ( _unavailable && _unavailable.length > 0 ) { el.innerHTML += '<h3>Du hast leider <em>nicht</em>:</h3><ul>'; };
 	for ( var i=0; i<_unavailable.length; i++) { 
 		title = _unavailable[i];
 		el.innerHTML += '<li>'+title+'</li>';
 	};
 	if ( _unavailable && _unavailable.length > 0 ) { el.innerHTML += '</ul>'; }
-	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Und das kostet: '+_pay+'€</h3>'; };
+	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Und das kostet: '+_pay+' €</h3>'; };
 }
 
 function _backup() {
@@ -497,7 +499,7 @@ function _yes(id) {
 	document.getElementById('tmp_times').innerHTML = JSON.stringify(_times);
 	//add title to available
 	_available = JSON.parse(document.getElementById('tmp_available').innerHTML);
-	_available.push(thismovie.identifier+': '+thismovie.title);
+	_available.push([thismovie.identifier,thismovie.title]);
 	document.getElementById('tmp_available').innerHTML = JSON.stringify(_available);
 	//add to checkout sum
 	_pay = parseInt(document.getElementById('tmp_pay').innerHTML);

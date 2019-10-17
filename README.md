@@ -4,7 +4,7 @@ Filmplaner für die Internationalen Hofer Filmtage (und andere Festivals)
 ## Installation
 Der Ordner `public` muss für den Webserver lesbar sein. Vorausgesetzt wird eine MySQL-Filmdatenbank mit einem leseberechtigten Datenbanknutzer. Die entsprechenden Daten sind in `php/conn_data.php` einzutragen.
 Die Filmdatenbank ist sehr rudimentär und sollte eine Tabelle mit folgenden Daten zu den Vorstellungen enthalten:
-'''
+```
 CREATE TABLE `<tablename>` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `unixtimestart` int(11) DEFAULT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE `<tablename>` (
   `extras` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=383 DEFAULT CHARSET=utf8mb4;
-'''
+```
 
 ## Konfiguration
 ### Festival

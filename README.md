@@ -1,5 +1,5 @@
 # hofplaner
-Filmplaner für die Internationalen Hofer Filmtage (und andere Festivals)
+Filmplaner für die Internationalen Hofer Filmtage (und andere Festivals) als Webseite
 
 ## Installation
 Der Ordner `public` muss für den Webserver lesbar sein. Vorausgesetzt wird eine MySQL-Filmdatenbank mit einem leseberechtigten Datenbanknutzer. Die entsprechenden Daten sind in `php/conn_data.php` einzutragen.
@@ -30,4 +30,5 @@ Am Anfang von `js/main.js`wird diese Zeit in Sekunden definiert. Sie sollte übl
 + Suchfunktion (?)
 + Prioritätensetzung bei der Filmauswahl
 + Internationalisierung (inkl. Huferisch)
++ App
 

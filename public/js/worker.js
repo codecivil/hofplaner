@@ -20,7 +20,6 @@ onmessage = function (e) {
 		}
 		var _status = function (i) {
 			_results[i] = new Array();
-			//_freetimes[i] = _times.slice(); //clones an array
 			_freetimes[i] = JSON.parse(JSON.stringify(_times)); //clone the easy way...
 			for ( j = 0; j<_titles.length; j++ ) {
 				var _stat2 = function (i,j) {

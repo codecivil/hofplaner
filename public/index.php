@@ -9,7 +9,6 @@ foreach ( $core as $component )
 
 $servername = $SESSION['servername'];
 $dbname = $SESSION['dbname'];
-$dbtable = $SESSION['dbtable'];
 $username = $SESSION['connuser'];
 $password = $SESSION['connpwd'];
 unset($SESSION);
@@ -20,7 +19,7 @@ mysqli_set_charset($conn,"utf8");
 
 //get all titles
 $stmt_array = array();
-$stmt_array['stmt'] = "SELECT * from '.$dbtable.' ORDER BY title";
+$stmt_array['stmt'] = "SELECT * from hof2019 ORDER BY title";
 $_database = execute_stmt($stmt_array,$conn,true)['result'];
 $_titles = array_unique(execute_stmt($stmt_array,$conn)['result']['title']);
 $conn->close();
@@ -98,7 +97,7 @@ $conn->close();
 				<div><span class="step">2</span> Jede weitere Verarbeitung der Daten geschieht ausschließlich auf Deinem Gerät. Du kannst also nach dem Laden der Homepage auch offline weiter arbeiten.</div>
 				<div><span class="step">3</span> Wie schnell die Berechnungen sind, hängt dann natürlich von Deinem Smartphone oder Computer ab.
 				Zum Teil sind umfangreiche Zwischenspeicher und viele Rechenoperationen nötig. Auf älteren Geräten kann es daher passieren, dass die
-				Software nicht funktioniert.</div>
+				Software nicht gut funktioniert.</div>
 			</div>
 			<div class="_info title_wrapper"><div class="_info title">UNDER<br />THE<br />HOOD</div></div>
 			<input type="checkbox" hidden id="cb_hood">
@@ -129,7 +128,7 @@ $conn->close();
 				<div><span class="step">8</span> Alle Berechnungen laufen auf Deinem Gerät. Wie schnell Lösungen gefunden werden, hängt also von 
 				Deinem Smartphone oder Computer ab.
 				Zum Teil sind umfangreiche Zwischenspeicher und viele Rechenoperationen nötig. Auf älteren Geräten kann es daher passieren, dass die
-				Software nicht funktioniert.</div>
+				Software langsam ist oder gar nicht funktioniert.</div>
 				<div><span class="step">9</span> Die Software findest Du auf <a href="https://github.com/codecivil/hofplaner">https://github.com/codecivil/hofplaner</a>.</div>
 			</div>
 			<div class="_info title_wrapper"><div class="_info title">BY<br />CODE<br />CIVIL</div></div>
@@ -291,7 +290,7 @@ $conn->close();
 		<div id="planung" hidden>
 			<div id="choosemovies" class="section">
 				<h1><div class="step">1</div> Welche Filme willst Du sehen?<span class="back" onclick="_back(this);">&nbsp;</span></h1>
-				<form id="formMovies" action="" onsubmit="event.preventDefault(); getMovies(this.closest('form')); return false;">
+				<form id="formMovies" action="" onsubmit="event.preventDefault(); getMovies(this); return false;">
 					<input type="reset" id="resetMovies" hidden>
 					<label for="resetMovies"><div class="button reset" >Reset</div></label>
 					<?php foreach ( $_titles as $index=>$title ) {
@@ -374,7 +373,12 @@ $conn->close();
 			</div>
 			<div id="getresult_wrapper" class="section" hidden>
 				<h1><span class="step">4</span> So viele Optionen hast Du <span class="back" onclick="_back(this);">&nbsp;</span></h1>				
-				<div id="getresult"></div>
+				<form id="formRestart" action="" onsubmit="event.preventDefault(); document.getElementById('submitOrder').disabled = false; _reset(); document.getElementById('choosemovies').scrollIntoView(); resultsWorker.terminate(); return false;" /><input form="formRestart" type="submit" id="submitRestart" hidden /><label for="submitRestart" id="labelSubmitRestart"></label></form>
+				<div id="progress" hidden>
+					<div class="bar"><div class="number">0 %</div></div>
+				</div>
+				<div id="getresult">
+				</div>
 				<br />
 				<div>Klicke das Ticket, um die Ticketabfrage zu starten.</div>
 				<form action="" onsubmit="event.preventDefault(); prepareStorage(startOrder); return false;">

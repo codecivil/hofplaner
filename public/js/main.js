@@ -100,12 +100,13 @@ function getMovies(form) {
 	var _titleinputs = form.querySelectorAll('input:checked');
 	var _titles = new Array();
 	for ( var i = 0; i<_titleinputs.length; i++) { _titles.push(_titleinputs[i].value); };
-	var _allMovies = JSON.parse(document.getElementById('database').innerHTML);
+	//for iPhone compatibility: iPhone cannot parse the innerHTML as JSON...
+	try { var _allMovies = JSON.parse(document.getElementById('database').innerHTML); } catch(error) { var _allMovies = JSON.parse(document.getElementById('database').innerText); }
 	//put long and short movies together
 	var _combinedmovies = new Array();
 	var _longmovie = new Object();
 	var _shortmovie = new Object();
-	_allMovies = _allMovies.sort((mv1,mv2)=> ( mv1.identifier > mv2.identifier )); // sort by identifier
+	_allMovies = _allMovies.sort((mv1,mv2)=> ( mv1.identifier - mv2.identifier )); // sort by identifier, - instead of > for comp. with LineageOS (Android 7)
 	for ( var i = 0; i < _allMovies.length; i++ ) {
 		if ( _allMovies[i+1] && _allMovies[i+1].identifier == _allMovies[i].identifier ) {
 			if ( ( _allMovies[i+1].unixtimeend - _allMovies[i+1].unixtimestart) > ( _allMovies[i].unixtimeend - _allMovies[i].unixtimestart ) ) {
@@ -134,7 +135,7 @@ function getMovies(form) {
 	for ( var i = 0; i < _combinedmovies.length; i++ ) {
 		_combinedmovies[i].unixtimeend += _hof_walktime;
 	}
-	_movies = _combinedmovies.sort((mv1,mv2)=> (mv1.title > mv2.title) );
+	_movies = _combinedmovies.sort((mv1,mv2)=> (''+mv1.title).localeCompare(mv2.title) );
 	//			
 	document.getElementById('movieshidden').innerHTML = JSON.stringify(_movies);
 /*	phpscript = "/functions/getMovies.php";
@@ -151,7 +152,8 @@ function getMovies(form) {
 function generateFormSoldOut() {
 	el = document.getElementById('formSoldOut');
 	el.innerHTML = '';
-	_movies = JSON.parse(document.getElementById('movieshidden').innerHTML);
+	try { var _movies = JSON.parse(document.getElementById('movieshidden').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('movieshidden').innerText); }
+//	_movies = JSON.parse(document.getElementById('movieshidden').innerHTML);
 	for ( var index=0; index<_movies.length; index++) { 
 		movie = _movies[index];
 		movie.begin = new Date(movie.unixtimestart*1000);
@@ -268,9 +270,12 @@ function prepareStorage(callback) {
 }
 
 function getResults(callback,tmp) {
-	document.getElementById('computation').innerHTML = "<div class=\"button\">Mögliche Filmpläne werden berechnet...</div>";
+	unhide('progress');
+	unhide('getresult_wrapper');
+//	document.getElementById('computation').innerHTML = "<div class=\"button\">Mögliche Filmpläne werden berechnet...</div>";
 	document.getElementById('submitOrder').disabled = true;
-	_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
+	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
+//	_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	_times = JSON.parse(document.getElementById('tmp_times').innerHTML);
 	_titles_before = _movies.filter((el,i,a)=>( ! a[i+1] || el.title != a[i+1].title)); //get the unique titles (from the sorted array!)
 	_soldout = JSON.parse(document.getElementById('tmp_soldout').innerHTML);
@@ -302,61 +307,59 @@ function getResults(callback,tmp) {
 		_factor.push(_movieswithtitle[_movieswithtitle.length-1].length);
 	};
 	// now check all possibilities
-	_results = new Array();
-	var _freetimes = new Array();
-	for ( var i = 0; i < _prod[_prod.length-1]; i++ ) {
-		//at i=1 the _freetimes[1] array is reduced to the first interval of _freetimes[0]; why? removeIntervals does not work, perhaps?
-		var _status = function (i) {
-			_results[i] = new Array();
-			//_freetimes[i] = _times.slice(); //clones an array
-			_freetimes[i] = JSON.parse(document.getElementById('tmp_times').innerHTML);
-			for ( j = 0; j<_titles.length; j++ ) {
-				var _stat2 = function (i,j) {
-					var index = Math.floor(i/_prod[j]) % _factor[j];
-					var movie = _movieswithtitle[j][index];
-					var interval = [movie.unixtimestart,movie.unixtimeend];
-					if ( ! fitsInto(_freetimes[i],interval) ) {
-						return false; 
-					} else {
-						_results[i].push(movie.id);
-						_freetimes[i] = removeIntervals(_freetimes[i],interval);
-						return true;	
-					}
-				}(i,j);				
-				if ( ! _stat2 ) { _results.splice(i,1); break; }
+	resultsWorker = new Worker('/js/worker.js');
+	var _results = new Array();
+	var _initialize = new Object();
+	_initialize._times = JSON.parse(document.getElementById('tmp_times').innerHTML);
+	_initialize._prod = _prod;
+	_initialize._factor = _factor;
+	_initialize._titles = _titles;
+	_initialize._movieswithtitle = _movieswithtitle;
+	resultsWorker.postMessage(_initialize);
+	resultsWorker.onmessage = function(e) {
+		if ( ! e.data.msgtype ) { return; }
+		console.log(e.data);
+		switch(e.data.msgtype) {
+		case 'progress':
+			var progress = document.getElementById('progress');
+			progress.querySelector('.number').innerText = e.data.msg + ' %';
+			progress.querySelector('.bar').style.width = Math.max(e.data.msg,5) + '%';
+			break;
+		case 'result':
+			hide('progress');
+			_results = e.data.msg;
+			switch( _results.length) {
+				case 0:
+					document.getElementById('getresult').innerHTML = "<strong>Leider ist Deine Auswahl so nicht möglich.</strong> Bitte reduziere die Anzahl der gewählten Filme oder erweitere Deine vefügbaren Zeiten.";
+					break;
+				case 1:
+					document.getElementById('getresult').innerHTML = "<strong>Glück gehabt!</strong> Es gibt genau einen möglichen Filmplan.";
+					document.getElementById('submitOrder').disabled = false;
+					break;
+				default:
+					document.getElementById('getresult').innerHTML = "<strong>"+_results.length + "</strong> Möglichkeiten wurden gefunden.";
+					document.getElementById('submitOrder').disabled = false;
 			}
-		}(i);
-	}
-	_results = _results.filter(function(result){ return result != undefined }); //reindex the array, so that length is applicable
-	switch( _results.length) {
-		case 0:
-			document.getElementById('getresult').innerHTML = "<strong>Leider ist Deine Auswahl so nicht möglich.</strong> Bitte reduziere die Anzahl der gewählten Filme oder erweitere Deine vefügbaren Zeiten.";
+			if ( _impossible.length > 0 ) {
+				document.getElementById('getresult').innerHTML += '<p>Folgende Filme laufen dann aber nie:</p><ul>';
+				for ( var i=0; i<_impossible.length; i++) { 
+					title = _impossible[i];
+					document.getElementById('getresult').innerHTML += '<li>'+title.title+'</li>';
+				}; 
+				document.getElementById('getresult').innerHTML += '</ul>';
+			}	
+			document.getElementById('tmp_results').innerHTML = JSON.stringify(_results);
+			if ( ! tmp ) { document.getElementById('resultshidden').innerHTML = JSON.stringify(_results); };
+//			document.getElementById('computation').innerHTML += "<p>Scrolle nun nach unten, falls dies nicht automatisch passiert.</p>";
+			if (callback) { callback(); };
 			break;
-		case 1:
-			document.getElementById('getresult').innerHTML = "<strong>Glück gehabt!</strong> Es gibt genau einen möglichen Filmplan.";
-			document.getElementById('submitOrder').disabled = false;
-			break;
-		default:
-			document.getElementById('getresult').innerHTML = "<strong>"+_results.length + "</strong> Möglichkeiten wurden gefunden.";
-			document.getElementById('submitOrder').disabled = false;
+		}
 	}
-	if ( _impossible.length > 0 ) {
-		document.getElementById('getresult').innerHTML += '<p>Folgende Filme laufen dann aber nie:</p><ul>';
-		for ( var i=0; i<_impossible.length; i++) { 
-			title = _impossible[i];
-			document.getElementById('getresult').innerHTML += '<li>'+title.title+'</li>';
-		}; 
-		document.getElementById('getresult').innerHTML += '</ul>';
-	}	
-	document.getElementById('tmp_results').innerHTML = JSON.stringify(_results);
-	if ( ! tmp ) { document.getElementById('resultshidden').innerHTML = JSON.stringify(_results); };
-	document.getElementById('computation').innerHTML += "<p>Scrolle nun nach unten, falls dies nicht automatisch passiert.</p>";
-	unhide('getresult_wrapper');
-	if (callback) { callback(); };
 }
 
 function startOrder() {
-	_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
+	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
+//	_movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
 	if ( _results.length == 0 || ( _results.length == 1 && _results[0].length == 0 ) ) { document.getElementById('orderwindow').style.zIndex = 100; _finish(); return; }
 	_stilltoorder = _results[0].length;
@@ -404,21 +407,24 @@ function _finish() {
 	el.innerHTML = '\
 		<div id="ticketback" onclick="_restore(startOrder)"></div>\
 	'
-	el.innerHTML += '<form id="formFinished" action="" onsubmit="event.preventDefault(); this.parentElement.style.zIndex = -100; document.getElementById(\'submitOrder\').disabled = false; _reset(); document.getElementById(\'choosemovies\').scrollIntoView(); return false;" /><input form="formFinished" type="submit" id="submitFinished" hidden /><label for="submitFinished" id="labelSubmitFinished"></label>';
+	el.innerHTML += '<form id="formFinished" action="" onsubmit="event.preventDefault(); this.parentElement.style.zIndex = -100; document.getElementById(\'submitOrder\').disabled = false; _reset(); document.getElementById(\'choosemovies\').scrollIntoView(); return false;" /><input form="formFinished" type="submit" id="submitFinished" hidden /><label for="submitFinished" id="labelSubmitFinished"></label></form>';
 	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Du hast:</h3>'; };
 	var _tablerows = '<table>'; //innerHTML must always be valid HTML, i.e tags must be closed immediately or they will be by the browser
+	_tablerows += '<colgroup><col class="col_identifier" /><col class="col_title"></colgroup>';
 	for ( var i=0; i<_available.length; i++) { 
 		title = _available[i];
 		_tablerows += '<tr><td>'+title[0]+'</td><td>'+title[1]+'</td></tr>';
 	};
 	if ( _available && _available.length > 0 ) { _tablerows += '</table>'; }
 	el.innerHTML += _tablerows;
-	if ( _unavailable && _unavailable.length > 0 ) { el.innerHTML += '<h3>Du hast leider <em>nicht</em>:</h3><ul>'; };
+	_lis = '';
+	if ( _unavailable && _unavailable.length > 0 ) { _lis += '<h3>Du hast leider <em>nicht</em>:</h3><ul>'; };
 	for ( var i=0; i<_unavailable.length; i++) { 
 		title = _unavailable[i];
-		el.innerHTML += '<li>'+title+'</li>';
+		_lis += '<li>'+title+'</li>';
 	};
-	if ( _unavailable && _unavailable.length > 0 ) { el.innerHTML += '</ul>'; }
+	if ( _unavailable && _unavailable.length > 0 ) { _lis += '</ul>'; }
+	el.innerHTML += _lis;
 	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Und das kostet: '+_pay+' €</h3>'; };
 }
 
@@ -467,13 +473,15 @@ function _reset(callback) {
 	document.getElementById('tmp_unavailable').innerHTML = '[]';
 	document.getElementById('tmp_pay').innerHTML = '0';
 	document.getElementById('computation').innerHTML = '';
+	document.getElementById('getresult').innerHTML = '';
 	if (callback) { callback(); }
 }
 
 function _yes(id) {
 	//first, backup
 	_backup();
-	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
+	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
+//	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	thismovie = _movies.filter(mov=>(mov.id == id))[0];
 	//update results
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
@@ -515,7 +523,8 @@ function _yes(id) {
 function _no(id) {
 	//first, backup
 	_backup();
-	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
+	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
+//	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	var thismovie = _movies.filter(mov=>(mov.id == id))[0];
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
 	_stilltoorder = _results[0].length;

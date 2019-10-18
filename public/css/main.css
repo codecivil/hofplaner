@@ -66,6 +66,9 @@ h1 { font-size: 2em; }
 	margin-bottom: 0.5em;
 }
 
+.bar { width: 0; margin: 1em auto; background: #000; }
+.number { color: #fff; }
+
 label[for^="submit"] {
 	display: inline-block;
 	margin: 1em auto;
@@ -80,7 +83,7 @@ label[for^="submit"] {
 }
 
 #labelSubmitOrder { background: url(/img/ticket-alt-solid.svg); }
-#labelSubmitFinished { background: url(/img/redo-alt-solid.svg); width: 1em; height: 1em;}
+#labelSubmitFinished,#labelSubmitRestart { background: url(/img/redo-alt-solid.svg); width: 1em; height: 1em;}
 
 #background {
 	position: fixed;
@@ -211,6 +214,7 @@ nav li { display: inline-block; }
 	background-repeat: no-repeat;
 	background-size: contain;
 	background-position: center center;
+	opacity: 0.5;
 }
 
 #orderwindow .button.yes {
@@ -247,3 +251,7 @@ nav li { display: inline-block; }
 }
 
 #orderwindow table { margin: 0 auto; }
+#orderwindow td { padding: 0 1.5em; vertical-align: top; }
+#orderwindow .col_identifier { text-align: center; width: 20%; }
+#orderwindow .col_title { text-align: left; width: 80%; }
+#orderwindow ul { list-style: none; }

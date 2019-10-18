@@ -18,7 +18,6 @@ onmessage = function (e) {
 			postMessage(_msg);
 			_oldpercent = _percent;
 		}
-		//at i=1 the _freetimes[1] array is reduced to the first interval of _freetimes[0]; why? removeIntervals does not work, perhaps?
 		var _status = function (i) {
 			_results[i] = new Array();
 			//_freetimes[i] = _times.slice(); //clones an array

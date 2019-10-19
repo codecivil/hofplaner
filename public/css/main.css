@@ -51,10 +51,17 @@ h1 { font-size: 2em; }
 	width: 5em;
 	text-align: center;
 	padding: 1em;	
+	font-family: Jellee;
 }
+
+.button a { font-family: Jellee; }
 
 .button.yes {
 	background: var(--yes);
+}
+
+.button.maybe {
+	background: var(--maybe);
 }
 
 .button.no {
@@ -175,7 +182,7 @@ nav li { display: inline-block; }
 	background: var(--order);
 }
 
-#orderwindow.finish { background: var(--neutral); }
+#orderwindow.finish { background: var(--neutral); overflow-y: scroll; }
 
 #orderwindow #stobackground {
 	position: fixed;
@@ -255,3 +262,4 @@ nav li { display: inline-block; }
 #orderwindow .col_identifier { text-align: center; width: 20%; }
 #orderwindow .col_title { text-align: left; width: 80%; }
 #orderwindow ul { list-style: none; }
+#orderwindow a { text-decoration: none; color: #000; }

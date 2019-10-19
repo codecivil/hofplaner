@@ -404,19 +404,24 @@ function _finish() {
 	_unavailable = JSON.parse(document.getElementById('tmp_unavailable').innerHTML);
 	_available = JSON.parse(document.getElementById('tmp_available').innerHTML);
 	_pay = JSON.parse(document.getElementById('tmp_pay').innerHTML);
+	var _movies = JSON.parse(document.getElementById('movieshidden').innerHTML);
+	var _bookedmovie_array = new Array();
 	el.innerHTML = '\
 		<div id="ticketback" onclick="_restore(startOrder)"></div>\
 	'
 	el.innerHTML += '<form id="formFinished" action="" onsubmit="event.preventDefault(); this.parentElement.style.zIndex = -100; document.getElementById(\'submitOrder\').disabled = false; _reset(); document.getElementById(\'choosemovies\').scrollIntoView(); return false;" /><input form="formFinished" type="submit" id="submitFinished" hidden /><label for="submitFinished" id="labelSubmitFinished"></label></form>';
 	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Du hast:</h3>'; };
 	var _tablerows = '<table>'; //innerHTML must always be valid HTML, i.e tags must be closed immediately or they will be by the browser
-	_tablerows += '<colgroup><col class="col_identifier" /><col class="col_title"></colgroup>';
+	_tablerows += '<colgroup><col class="col_identifier" /><col class="col_title" /></colgroup>';
 	for ( var i=0; i<_available.length; i++) { 
 		title = _available[i];
+		_bookedmovie_array.push(_movies.filter(mov=>(mov.identifier == title[0]))[0]);
 		_tablerows += '<tr><td>'+title[0]+'</td><td>'+title[1]+'</td></tr>';
 	};
 	if ( _available && _available.length > 0 ) { _tablerows += '</table>'; }
+	el.innerHTML += '<div class="button maybe"><a href="data:text/plain;charset=utf-8,'+encodeURIComponent(_icsstring)+'" download="HOF.ics">In Kalender importieren</a></div>';
 	el.innerHTML += _tablerows;
+	var _icsstring = _generateICS(_bookedmovie_array);
 	_lis = '';
 	if ( _unavailable && _unavailable.length > 0 ) { _lis += '<h3>Du hast leider <em>nicht</em>:</h3><ul>'; };
 	for ( var i=0; i<_unavailable.length; i++) { 
@@ -553,4 +558,67 @@ function _no(id) {
 	document.getElementById('tmp_results').innerHTML = JSON.stringify(_results);
 	startOrder();
 	return false;
+}
+
+function unix2icsTime(_unixtime) {
+	var _ut = new Date(_unixtime*1000); //need milliseconds instead of seconds
+	_ics = new Object();
+	_ics.year = _ut.getFullYear();
+	_ics.month = (_ut.getMonth()<9?'0':'')+(_ut.getMonth()+1);
+	_ics.day = (_ut.getDate()<10?'0':'')+(_ut.getDate());
+	_ics.hours = (_ut.getHours()<10?'0':'')+(_ut.getHours());
+	_ics.minutes = (_ut.getMinutes()<10?'0':'')+(_ut.getMinutes());
+	_ics.seconds = (_ut.getSeconds()<10?'0':'')+(_ut.getSeconds());
+	var _icsTime = _ics.year.toString() + _ics.month + _ics.day + 'T' + _ics.hours + _ics.minutes + _ics.seconds;
+	return _icsTime;
+}
+
+function _generateICS(_bookedmovie_array) {
+	var _body = "BEGIN:VCALENDAR\n\
+VERSION:2.0\n\
+CALSCALE:GREGORIAN\n\
+PRODID:-//hofplaner//hofplaner 19-1.0//DE\n\
+X-WR-CALNAME:\n\
+X-APPLE-CALENDAR-COLOR:\n\
+BEGIN:VTIMEZONE\n\
+TZID:Europe/Berlin\n\
+BEGIN:DAYLIGHT\n\
+TZOFFSETFROM:+0100\n\
+TZOFFSETTO:+0200\n\
+TZNAME:CEST\n\
+DTSTART:19700329T020000\n\
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\n\
+END:DAYLIGHT\n\
+BEGIN:STANDARD\n\
+TZOFFSETFROM:+0200\n\
+TZOFFSETTO:+0100\n\
+TZNAME:CET\n\
+DTSTART:19701025T030000\n\
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\n\
+END:STANDARD\n\
+END:VTIMEZONE\n\
+";
+	for ( var i=0; i < _bookedmovie_array.length; i++ ) {
+		var _bookedmovie = _bookedmovie_array[i];
+		var _created = unix2icsTime(Math.floor(new Date()/1000));
+		var _lastmodified = _created;
+		var _uid = "hp53"+(Math.floor(new Date()/1))+Math.floor(Math.random()*100000);
+		var _summary = "HOF: "+_bookedmovie.identifier+" / "+_bookedmovie.title;
+		var _dtstart = unix2icsTime(_bookedmovie.unixtimestart);
+		var _dtend = unix2icsTime(_bookedmovie.unixtimeend);
+		_body += "\
+BEGIN:VEVENT\n\
+CREATED:"+_created+"\n\
+LAST-MODIFIED:"+_lastmodified+"\n\
+UID:"+_uid+"\n\
+DTSTAMP:"+_created+"\n\
+SUMMARY:"+_summary+"\n\
+DTSTART;TZID=Europe/Berlin:"+_dtstart+"\n\
+DTEND;TZID=Europe/Berlin:"+_dtend+"\n\
+TRANSP:OPAQUE\n\
+END:VEVENT\n\
+";
+	}
+	_body += "END:VCALENDAR";
+	return _body;
 }

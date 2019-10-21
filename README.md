@@ -25,10 +25,21 @@ Der Zeitraum des Festivals ist in `php/hof_data.php` einzutragen. Der Endtag ist
 ### Mindestzeit zwischen Vorstellungen
 Am Anfang von `js/main.js`wird diese Zeit in Sekunden definiert. Sie sollte übliche Vespätungen, Q&A-Sitzungen, die Gehzeit zwischen zwei Locations sowie einen Zeitpuffer, um sicheren Einlass und akzeptable Plätze zu bekommen, enthalten. Hier ist sie auf 30 Minuten gesetzt.
 
+## Features
++ Prinzip "angefragt+verfügbar=gekauft" beim Algorithmus der Ticketabfrage erlaubt den Einsatz des Planers direkt am Ticketcontainer
++ plant 30 Minuten Mindestabstand zwischen Vorstellungen ein
++ erlaubt Import gekaufter Tickets in Kalender (sofern der Download funktioniert, s. Bugs)
++ erlaubt Import bestehender Termine von .ics-Dateien in die Auswahl der zeitlichen Verfügbarkeit
+
 ## In Planung
 + ausführlichere Datenbank und Auswahl von Sortierkriterien
 + Suchfunktion (?)
 + Prioritätensetzung bei der Filmauswahl
 + Internationalisierung (inkl. Huferisch)
 + App
++ flexiblerer Abstand zwischen Vorstellungen, z.B. konfigurierbar oder von den Kinos aufeinanderfolgender Vorstellungen abhängig...
 
+## Bugs
++ Kurzfilmgruppenscreenings werden falsch behandelt, was zu Doppelbuchungen führen kann, wenn sowohl ein Langfilm als auch sein zugehöriger Kurzfilm bei der Filmauswahl gewählt wurden und der Kurzfilm Teil des Gruppenscreenings ist.
++ Die Beginn- und Endzeiten bei Kurzfilmgruppenscreenings sind nur beim ersten Film richtig.
++ Der Download gebuchter Filme als .ics-File funktioniert bei einigen mobilen Browsern nicht: iPhones erlauben keinen Download von Textdateien und zumindest einige Versionen des Android Browsers scheinen nicht von einer lokalen Seite herunterzuladen. Der Workaround, über eine weitere Serveranfrage den Download zu generieren, würde das gegebene Datenschutzversprechen brechen. 

@@ -34,6 +34,7 @@ $conn->close();
 		<link rel="stylesheet" type="text/css" media="screen, projection, print" href="/css/colors.css" />
 		<link rel="stylesheet" type="text/css" media="screen, projection, print" href="/css/info.css" />
 		<link rel="stylesheet" type="text/css" media="screen, projection, print" href="/css/main.css" />
+		<script type="text/javascript" src="/js/FileSaver.js"></script>
 		<script type="text/javascript" src="/js/main.js"></script>
 	</head>
 	<body>
@@ -179,7 +180,7 @@ $conn->close();
 						Vechteweg 4<br>
 						30539 Hannover <br>
 						<br>
-						Quellenangaben für die verwendeten Bilder, Grafiken und Schriftarten:<br>
+						Quellenangaben für die verwendeten Bilder, Grafiken, Software und Schriftarten:<br>
 						<br>
 						SVG-Grafiken von<br>
 						https://fontawesome.com/icons<br>
@@ -189,6 +190,8 @@ $conn->close();
 						Schriftart "Jellee" aus<br>
 						https://fontlibrary.org/en/font/jellee-typeface<br>
 						Autor: Alfredo Marco Pradil, Lizenz: SIL Open Font License<br>
+						<br>
+						FileSaver.js von <a href="https://github.com/eligrey/FileSaver.js">https://github.com/eligrey/FileSaver.js</a>
 					</div>
 				</div>
 				<div id="dsgvo_wrapper">
@@ -315,6 +318,7 @@ $conn->close();
 				<div class="button no" onclick=" unhide('labelSubmitTimes'); unhide('choosetimestable');">nein</div>
 				<form id="formTimes" action="" onsubmit="event.preventDefault(); getTimes(this); prepareStorage(getResults); return false;"></form>
 				<div id="choosetimestable" hidden>
+					<div id="importTimes"><label for="importFiles"><div class="button maybenot">Importiere Termine</div></label><input hidden id="importFiles" type="file" multiple onchange="_importFiles(this);" value=""></div>
 					<table id="timestable">
 						<?php
 							$_date = array();

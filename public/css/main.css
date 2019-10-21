@@ -68,6 +68,11 @@ h1 { font-size: 2em; }
 	background: var(--no);
 }
 
+.button.maybenot {
+	background: var(--maybenot);
+}
+
+
 .button.reset {
 	background: var(--no);
 	margin-bottom: 0.5em;

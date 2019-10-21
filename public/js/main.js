@@ -157,7 +157,7 @@ function generateFormSoldOut() {
 	for ( var index=0; index<_movies.length; index++) { 
 		movie = _movies[index];
 		movie.begin = new Date(movie.unixtimestart*1000);
-		movie.end = new Date(movie.unixtimeend*1000);
+		movie.end = new Date((movie.unixtimeend-_hof_walktime)*1000);
 		movie.time = movie.begin.getDate()+'.'+(movie.begin.getMonth()+1)+'., '+movie.begin.getHours()+':'+(movie.begin.getMinutes()<10?'0':'')+movie.begin.getMinutes()+' - '+movie.end.getHours()+':'+(movie.end.getMinutes()<10?'0':'')+movie.end.getMinutes();
 		el.innerHTML += '\
 			<input type="checkbox" hidden id="soldout_'+index+'" value="'+movie.id+'"> \
@@ -418,10 +418,14 @@ function _finish() {
 		_bookedmovie_array.push(_movies.filter(mov=>(mov.identifier == title[0]))[0]);
 		_tablerows += '<tr><td>'+title[0]+'</td><td>'+title[1]+'</td></tr>';
 	};
-	if ( _available && _available.length > 0 ) { _tablerows += '</table>'; }
-	el.innerHTML += '<div class="button maybe"><a href="data:text/plain;charset=utf-8,'+encodeURIComponent(_icsstring)+'" download="HOF.ics">In Kalender importieren</a></div>';
-	el.innerHTML += _tablerows;
 	var _icsstring = _generateICS(_bookedmovie_array);
+	if ( _available && _available.length > 0 ) { 
+		_tablerows += '</table>';
+//		el.innerHTML += '<div class="button maybe"><a href="data:text/plain;charset=utf-8,'+encodeURIComponent(_icsstring)+'" download="HOF.ics">Speichern</a></div>';
+		el.innerHTML +='<div class="button maybe" onclick="_saveAsICS(\''+encodeURI(_icsstring)+'\')">Speichern</div>'
+   		el.innerHTML += '<div>(um in einen Kalender oder diese Anwendung zu importieren; funktioniert nicht in allen mobilen Browsern)</div><br />'
+	}
+	el.innerHTML += _tablerows;
 	_lis = '';
 	if ( _unavailable && _unavailable.length > 0 ) { _lis += '<h3>Du hast leider <em>nicht</em>:</h3><ul>'; };
 	for ( var i=0; i<_unavailable.length; i++) { 
@@ -431,6 +435,11 @@ function _finish() {
 	if ( _unavailable && _unavailable.length > 0 ) { _lis += '</ul>'; }
 	el.innerHTML += _lis;
 	if ( _available && _available.length > 0 ) { el.innerHTML += '<h3>Und das kostet: '+_pay+' €</h3>'; };
+}
+
+function _saveAsICS(_string) {
+	var _blob = new Blob([decodeURI(_string)],{type: "text/plain;charset=utf-8"});
+	saveAs(_blob,'HOF.ics');
 }
 
 function _backup() {
@@ -605,7 +614,7 @@ END:VTIMEZONE\n\
 		var _uid = "hp53"+(Math.floor(new Date()/1))+Math.floor(Math.random()*100000);
 		var _summary = "HOF: "+_bookedmovie.identifier+" / "+_bookedmovie.title;
 		var _dtstart = unix2icsTime(_bookedmovie.unixtimestart);
-		var _dtend = unix2icsTime(_bookedmovie.unixtimeend);
+		var _dtend = unix2icsTime(_bookedmovie.unixtimeend-_hof_walktime);
 		_body += "\
 BEGIN:VEVENT\n\
 CREATED:"+_created+"\n\
@@ -621,4 +630,66 @@ END:VEVENT\n\
 	}
 	_body += "END:VCALENDAR";
 	return _body;
+}
+
+function _importFiles(_input) {
+	var _files = _input.files;
+	for ( var i=0; i< _files.length; i++ ) {
+		var _import = function(i) { 
+			_file = _files[i];
+			//validate file type
+//			if ( _file.type.indexOf('text/') == -1 ) { return; } // not reliable
+			//read file and process
+			_filereader = new FileReader();
+			_filereader.onload = function() {
+				var _ics = _filereader.result.split('\n'); //separate lines in array
+				var _event = false;	
+				var _interval = new Array();
+				for ( var j=0; j < _ics.length; j++ ) {
+					if ( _ics[j].indexOf('BEGIN:VEVENT') != -1 ) { _event = true; }
+					if ( _ics[j].indexOf('END:VEVENT') != -1 ) { _event = false; }
+					if ( _event && _ics[j].indexOf('DTSTART') != -1 ) {
+						var _raw = _ics[j].substr(_ics[j].indexOf(':')+1);
+						var _date = new Object();
+						_date.year = parseInt(_raw.substr(0,4));
+						_date.month = parseInt(_raw.substr(4,2))-1;
+						_date.day = parseInt(_raw.substr(6,2));
+						_date.hours = parseInt(_raw.substr(9,2));
+						_date.minutes = parseInt(_raw.substr(11,2));
+						_date.hours = parseInt(_raw.substr(9,2));						
+//						var _datestring = _raw.substr(0,4)+"-"+_raw.substr(4,2)+'-'+_raw.substr(6,2)+'T'+_raw.substr(9,2)+':'+_raw.substr(11,2)+':'+_raw.substr(13,2);
+						_interval[0] = Math.floor(new Date(_date.year,_date.month,_date.day,_date.hours,_date.minutes)/1000);
+					}
+					if ( _event && _ics[j].indexOf('DTEND') != -1 ) {
+						var _raw = _ics[j].substr(_ics[j].indexOf(':')+1);
+						var _date = new Object();
+						_date.year = parseInt(_raw.substr(0,4));
+						_date.month = parseInt(_raw.substr(4,2))-1;
+						_date.day = parseInt(_raw.substr(6,2));
+						_date.hours = parseInt(_raw.substr(9,2));
+						_date.minutes = parseInt(_raw.substr(11,2));
+						_date.hours = parseInt(_raw.substr(9,2));						
+//						var _datestring = _raw.substr(0,4)+"-"+_raw.substr(4,2)+'-'+_raw.substr(6,2)+'T'+_raw.substr(9,2)+':'+_raw.substr(11,2)+':'+_raw.substr(13,2);
+						_interval[1] = Math.floor(new Date(_date.year,_date.month,_date.day,_date.hours,_date.minutes)/1000);
+						_uncheck(_interval);
+						_interval = new Array();
+					}
+				}
+			}
+			_filereader.readAsText(_file);
+		}(i);
+	}
+	_input.value = '';
+}
+
+function _uncheck(_interval) {
+	_slots = document.getElementById('timestable').querySelectorAll('[type="checkbox"]');
+	for ( var i=0; i < _slots.length; i++ ) {
+		var _slotinterval = JSON.parse(_slots[i].value);
+		//uncheck if intervals intersect
+		if ( (_slotinterval[1] - _interval[0]) > 0  && ( _interval[1] - _slotinterval[0]) > 0 ) {
+			console.log(_slotinterval);
+			_slots[i].checked = false;
+		}
+	}
 }

@@ -14,7 +14,7 @@ CREATE TABLE `<tablename>` (
   `title` varchar(255) DEFAULT NULL,
   `extras` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=383 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 Bei den Hofer Filmtagen wird die Filmnummer als `identifier` benutzt und das Kino als `extras`.
 

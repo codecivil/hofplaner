@@ -266,5 +266,5 @@ nav li { display: inline-block; }
 #orderwindow td { padding: 0 1.5em; vertical-align: top; }
 #orderwindow .col_identifier { text-align: center; width: 20%; }
 #orderwindow .col_title { text-align: left; width: 80%; }
-#orderwindow ul { list-style: none; }
+#orderwindow ul { list-style: none; padding: 0; }
 #orderwindow a { text-decoration: none; color: #000; }

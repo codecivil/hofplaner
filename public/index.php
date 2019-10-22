@@ -318,7 +318,7 @@ $conn->close();
 				<div class="button no" onclick=" unhide('labelSubmitTimes'); unhide('choosetimestable');">nein</div>
 				<form id="formTimes" action="" onsubmit="event.preventDefault(); getTimes(this); prepareStorage(getResults); return false;"></form>
 				<div id="choosetimestable" hidden>
-					<div id="importTimes"><label for="importFiles"><div class="button maybenot">Importiere Termine</div></label><input hidden id="importFiles" type="file" multiple onchange="_importFiles(this);" value=""></div>
+					<div id="importTimes"><label for="importFiles"><div class="button maybenot">Importiere Termine</div></label><input hidden id="importFiles" type="file" accept=".ics,.vcs" multiple onchange="_importFiles(this);" value=""></div>
 					<table id="timestable">
 						<?php
 							$_date = array();

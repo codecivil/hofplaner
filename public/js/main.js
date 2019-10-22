@@ -296,6 +296,29 @@ function getResults(callback,tmp) {
 		_onlytitles.push(_titles[i].title);
 	}
 	_impossible = _titles_before.filter(title=>( _onlytitles.indexOf(title.title) == -1 ));
+	//implement "combined screenings first" policy: keep only most combined screenings
+	for ( var i=0; i<_titles.length; i++ ) {
+		var _title_array = _titles[i].title.split(' + ');
+		console.log(_title_array);
+		var _combination = _title_array.length;
+		for ( var j=0; j<_titles.length; j++) {
+			var _othertitle = _titles[j].title;
+			var _tobeignored = false;
+			if ( _othertitle.split(' + ').length < _combination ) {
+				_tobeignored = true;
+				var _othertitle_array = _othertitle.split(' + ');
+				console.log('Test:'); console.log(_othertitle_array);
+				for ( var k=0; k<_othertitle_array.length; k++ ) {
+					if ( _title_array.indexOf(_othertitle_array[k]) == -1 ) { _tobeignored = false; }
+					console.log(_tobeignored);
+				}
+			}
+			if ( _tobeignored ) { 
+				_titles.splice(j,1);
+				console.log(_titles);
+			}
+		}
+	}
 	// prepare iteration
 	_movieswithtitle = new Array();
 	_prod = [1]; //combinations as multibased number representations
@@ -497,6 +520,7 @@ function _yes(id) {
 	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
 //	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	thismovie = _movies.filter(mov=>(mov.id == id))[0];
+	var thismovie_array = thismovie.title.split(' + ');
 	//update results
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
 	_results = _results.filter(result=>(result.indexOf(id) > -1));
@@ -508,7 +532,14 @@ function _yes(id) {
 	//remove title from _movies (for the case where you have to modify your search during order)
 	for ( var i=0; i<_movies.length; i++) { 
 		movie = _movies[i];
-		if ( movie.title ==  thismovie.title ) {
+//		if ( movie.title ==  thismovie.title ) {
+//		remove if all movies of movie are contained in thismovie
+		var movie_array = movie.title.split(' + ');
+		var _contained = true;
+		for ( var j=0; j<movie_array.length; j++ ) {
+			if ( thismovie_array.indexOf(movie_array[j]) == -1 ) { _contained = false; }
+		}
+		if ( _contained ) {
 			_movies.splice(i,1);
 			i--;
 		}

@@ -34,6 +34,7 @@ $conn->close();
 		<link rel="stylesheet" type="text/css" media="screen, projection, print" href="/css/colors.css" />
 		<link rel="stylesheet" type="text/css" media="screen, projection, print" href="/css/info.css" />
 		<link rel="stylesheet" type="text/css" media="screen, projection, print" href="/css/main.css" />
+		<link rel="prefetch" href="/js/worker.js" as="worker" />
 		<script type="text/javascript" src="/js/FileSaver.js"></script>
 		<script type="text/javascript" src="/js/main.js"></script>
 	</head>
@@ -293,7 +294,7 @@ $conn->close();
 		<div id="planung" hidden>
 			<div id="choosemovies" class="section">
 				<h1><div class="step">1</div> Welche Filme willst Du sehen?<span class="back" onclick="_back(this);">&nbsp;</span></h1>
-				<form id="formMovies" action="" onsubmit="event.preventDefault(); getMovies(this); return false;">
+				<form id="formMovies" action="" onsubmit="event.preventDefault(); getTitles(this,getMovies); return false;">
 					<input type="reset" id="resetMovies" hidden>
 					<label for="resetMovies"><div class="button reset" >Reset</div></label>
 					<?php foreach ( $_titles as $index=>$title ) {
@@ -402,9 +403,22 @@ $conn->close();
 				<div id="unavailablehidden">[]</div>
 				<div id="timeshidden">[]</div>
 				<div id="resultshidden">[]</div>
+				<div id="payhidden">
+					<div id="price_afternoon"><?php echo($HOF['preis_nachmittag']); ?></div>
+					<div id="price_evening"><?php echo($HOF['preis_abend']); ?></div>
+				</div>
 				<div id="history">
+					<div id="hist_titles" class="hist">
+						<div id="tmp_titles">[]</div>
+					</div>
+					<div id="hist_removedtitles" class="hist">
+						<div id="tmp_removedtitles">[]</div>
+					</div>
 					<div id="hist_movies" class="hist">
 						<div id="tmp_movies">[]</div>
+					</div>
+					<div id="hist_removedmovies" class="hist">
+						<div id="tmp_removedmovies">[]</div>
 					</div>
 					<div id="hist_soldout" class="hist">
 						<div id="tmp_soldout">[]</div>

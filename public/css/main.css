@@ -4,6 +4,8 @@
 	font-size: 1em;
 }
 
+tiny { font-size: 0.7em; }
+
 /*html { height: 100%; overflow:auto; }
 body { height: 100%; } */
 
@@ -54,7 +56,7 @@ h1 { font-size: 2em; }
 	font-family: Jellee;
 }
 
-.button a { font-family: Jellee; }
+.button.inbutton { padding: 0; }
 
 .button.yes {
 	background: var(--yes);

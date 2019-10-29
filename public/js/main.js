@@ -96,10 +96,19 @@ function _back(el) {
 	}
 }
 
-function getMovies(form) {
+function getTitles(form,callback) {
 	var _titleinputs = form.querySelectorAll('input:checked');
 	var _titles = new Array();
 	for ( var i = 0; i<_titleinputs.length; i++) { _titles.push(_titleinputs[i].value); };
+	document.getElementById('tmp_titles').innerHTML = JSON.stringify(_titles);
+	if (callback) { callback(); };	
+}
+
+//tmp = true; save screenings only in tmp div
+function getMovies(tmp) {
+	try { var _titles = JSON.parse(document.getElementById('tmp_titles').innerHTML); } catch(error) { var _titles = JSON.parse(document.getElementById('tmp_titles').innerText); }
+	try { var _removedtitles = JSON.parse(document.getElementById('tmp_removedtitles').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_removedtitles').innerText); }
+	try { var _removedmovies = JSON.parse(document.getElementById('tmp_removedmovies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_removedmovies').innerText); }
 	//for iPhone compatibility: iPhone cannot parse the innerHTML as JSON...
 	try { var _allMovies = JSON.parse(document.getElementById('database').innerHTML); } catch(error) { var _allMovies = JSON.parse(document.getElementById('database').innerText); }
 	//put long and short movies together
@@ -117,8 +126,12 @@ function getMovies(form) {
 			_longmovie.unixtimeend += _shortmovie.unixtimeend - _shortmovie.unixtimestart;
 		}
 	}
-	var _movies = _allMovies.filter(function(movie){ return ( _titles.indexOf(movie.title) != -1 ); });
+	//determine selected movies and remove removed movies from selected movies
+	var _movies = _allMovies.filter(function(movie){ return ( _titles.indexOf(movie.title) != -1 && _removedmovies.indexOf(movie.identifier) == -1 ); });
+	//cleanup removed categories
+	//...later 
 	_combinedmovies = _movies.sort((mv1,mv2)=> ( mv1.identifier > mv2.identifier )); // sort by identifier
+	//is this test correct? Do we have to test all orders of same identifier screenings?
 	for ( var i = 0; i < _combinedmovies.length; i++ ) {
 		if ( _combinedmovies[i+1] && _combinedmovies[i+1].identifier == _combinedmovies[i].identifier ) {
 			if ( ( _combinedmovies[i+1].unixtimeend - _combinedmovies[i+1].unixtimestart) > ( _combinedmovies[i].unixtimeend - _combinedmovies[i].unixtimestart ) ) {
@@ -126,9 +139,12 @@ function getMovies(form) {
 			} else {
 				_longmovie = _combinedmovies[i]; _shortmovie = _combinedmovies[i+1]; _splice = i+1;
 			}
-			_longmovie.title += ' + '+_shortmovie.title;
-			_combinedmovies.splice(_splice,1);
-			i--;
+			var _tmptitle = _longmovie.title + ' + '+_shortmovie.title;
+			if ( _removedtitles.indexOf(_tmptitle) == -1 ) {
+				_longmovie.title = _tmptitle;
+				_combinedmovies.splice(_splice,1);
+				i--;
+			}
 		}
 	}
 	//add _hof_walktime to screening
@@ -136,8 +152,13 @@ function getMovies(form) {
 		_combinedmovies[i].unixtimeend += _hof_walktime;
 	}
 	_movies = _combinedmovies.sort((mv1,mv2)=> (''+mv1.title).localeCompare(mv2.title) );
-	//			
-	document.getElementById('movieshidden').innerHTML = JSON.stringify(_movies);
+	//
+	if ( tmp ) {
+		document.getElementById('tmp_movies').innerHTML = JSON.stringify(_movies);
+	} else {
+		document.getElementById('movieshidden').innerHTML = JSON.stringify(_movies);
+		unhide('marksoldout');	
+	}
 /*	phpscript = "/functions/getMovies.php";
 	var _request = new XMLHttpRequest();
 	var el = document.getElementById('movieshidden');
@@ -145,7 +166,6 @@ function getMovies(form) {
 	_request.open(form.method,phpscript,true);
 	_request.send(new FormData (form));
 */
-	unhide('marksoldout');	
 	return false;
 }
 
@@ -444,9 +464,10 @@ function _finish() {
 	var _icsstring = _generateICS(_bookedmovie_array);
 	if ( _available && _available.length > 0 ) { 
 		_tablerows += '</table>';
+//this simple download solution does not work often enough
 //		el.innerHTML += '<div class="button maybe"><a href="data:text/plain;charset=utf-8,'+encodeURIComponent(_icsstring)+'" download="HOF.ics">Speichern</a></div>';
 		el.innerHTML +='<div class="button maybe" onclick="_saveAsICS(\''+encodeURI(_icsstring)+'\')">Speichern</div>'
-   		el.innerHTML += '<div>(um in einen Kalender oder diese Anwendung zu importieren; funktioniert nicht in allen mobilen Browsern)</div><br />'
+   		el.innerHTML += '<div><tiny>(um in einen Kalender oder diese Anwendung zu importieren; funktioniert nicht in allen mobilen Browsern)</tiny></div><br />'
 	}
 	el.innerHTML += _tablerows;
 	_lis = '';
@@ -462,7 +483,31 @@ function _finish() {
 
 function _saveAsICS(_string) {
 	var _blob = new Blob([decodeURI(_string)],{type: "text/plain;charset=utf-8"});
-	saveAs(_blob,'HOF.ics');
+	if ( false ) {
+// debug: jelly browser (lineage os) still does not do the download; not at all this time
+// seems to have no purpose at all
+//	if ( is_touch_device() ) {
+		var rq = new XMLHttpRequest();
+		var rnd = Math.floor(Math.random()*1000000000);
+		rq.onload = function() {
+			var el = document.getElementById('orderwindow').querySelector('.button.maybe');
+			el.innerHTML = '<form action="../php/saveAs.php" method="post">\
+				<input type="text" name="content" hidden value="'+_string+'"/>\
+				<label for="downloadSubmit"><div class="button inbutton">Jetzt herunter laden</div></label>\
+				<input type="submit" id="downloadSubmit" hidden />'
+//			el.innerHTML = '<a href="/tmp/HOF_'+rnd+'.ics" download="HOF.ics">Jetzt herunterladen</a>';
+			el.nextSibling.innerHTML = "Aus technischen Gründen muss die Datei vom Server geladen werden; sie wird aber weder gespeichert noch geloggt.";
+			el.removeAttribute('onclick');
+		};
+		rq.open('POST','../php/saveAs.php',true);
+		var _file = new FormData();
+		_file.append('content',decodeURI(_string));
+		_file.append('filename','HOF_'+rnd+'.ics');
+		rq.send(_file);
+	} else {
+// this is our solution now: use FileSaver.js
+		saveAs(_blob,'HOF.ics');
+	}
 }
 
 function _backup() {
@@ -506,10 +551,14 @@ function _reset(callback) {
 		}(i);
 	};
 	//clear bought tickets
+	getTitles(document.getElementById('formMovies'));
 	document.getElementById('tmp_available').innerHTML = '[]';
+	document.getElementById('tmp_removedtitles').innerHTML = '[]';
+	document.getElementById('tmp_removedmovies').innerHTML = '[]';
+	document.getElementById('tmp_movies').innerHTML = '[]';
 	document.getElementById('tmp_unavailable').innerHTML = '[]';
 	document.getElementById('tmp_pay').innerHTML = '0';
-	document.getElementById('computation').innerHTML = '';
+//	document.getElementById('computation').innerHTML = '';
 	document.getElementById('getresult').innerHTML = '';
 	if (callback) { callback(); }
 }
@@ -518,6 +567,7 @@ function _yes(id) {
 	//first, backup
 	_backup();
 	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
+	try { var _titles = JSON.parse(document.getElementById('tmp_titles').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_titles').innerText); }
 //	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	thismovie = _movies.filter(mov=>(mov.id == id))[0];
 	var thismovie_array = thismovie.title.split(' + ');
@@ -530,7 +580,14 @@ function _yes(id) {
 	};
 	document.getElementById('tmp_results').innerHTML = JSON.stringify(_results);
 	//remove title from _movies (for the case where you have to modify your search during order)
-	for ( var i=0; i<_movies.length; i++) { 
+	for ( var i=0; i<thismovie_array.length; i++ ) {
+		console.log(thismovie_array); console.log(_titles);
+		console.log(_titles.indexOf(thismovie_array[i]));
+		_titles.splice(_titles.indexOf(thismovie_array[i]),1);
+	}
+	document.getElementById('tmp_titles').innerHTML = JSON.stringify(_titles);
+	getMovies(true);
+/*	for ( var i=0; i<_movies.length; i++) { 
 		movie = _movies[i];
 //		if ( movie.title ==  thismovie.title ) {
 //		remove if all movies of movie are contained in thismovie
@@ -545,6 +602,7 @@ function _yes(id) {
 		}
 	};
 	document.getElementById('tmp_movies').innerHTML = JSON.stringify(_movies);
+*/
 	//add time slot to unaivalability (same reason)
 	_times = JSON.parse(document.getElementById('tmp_times').innerHTML);
 	interval = [thismovie.unixtimestart,thismovie.unixtimeend];
@@ -555,10 +613,12 @@ function _yes(id) {
 	_available.push([thismovie.identifier,thismovie.title]);
 	document.getElementById('tmp_available').innerHTML = JSON.stringify(_available);
 	//add to checkout sum
+	var _price_afternoon = parseFloat(document.getElementById('price_afternoon').innerHTML);
+	var _price_evening = parseFloat(document.getElementById('price_evening').innerHTML);
 	_pay = parseInt(document.getElementById('tmp_pay').innerHTML);
 	_datetime = new Date(thismovie.unixtimestart*1000);
 	_hour = _datetime.getHours();
-	if ( _hour < 18 ) { _pay += 7; } else { _pay += 8; } //is really meant: and hour>7 or so?
+	if ( _hour < 18 ) { _pay += _price_afternoon; } else { _pay += _price_evening; } //is really meant: and hour>7 or so?
 	document.getElementById('tmp_pay').innerHTML = _pay;
 	//next order
 	startOrder();
@@ -568,24 +628,29 @@ function _yes(id) {
 function _no(id) {
 	//first, backup
 	_backup();
+	try { var _removedtitles = JSON.parse(document.getElementById('tmp_removedtitles').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_removedtitles').innerText); }
+	try { var _titles = JSON.parse(document.getElementById('tmp_titles').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_titles').innerText); }
 	try { var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_movies').innerText); }
+	try { var _removedmovies = JSON.parse(document.getElementById('tmp_removedmovies').innerHTML); } catch(error) { var _movies = JSON.parse(document.getElementById('tmp_removedmovies').innerText); }
 //	var _movies = JSON.parse(document.getElementById('tmp_movies').innerHTML);
 	var thismovie = _movies.filter(mov=>(mov.id == id))[0];
+	var thismovie_array = thismovie.title.split(' + ');
 	_results = JSON.parse(document.getElementById('tmp_results').innerHTML);
 	_stilltoorder = _results[0].length;
 	_results = _results.filter(result=>(result.indexOf(id) == -1));
+	_removedmovies.push(thismovie.identifier);
+	document.getElementById('tmp_removedmovies').innerHTML = JSON.stringify(_removedmovies);
 	if ( _stilltoorder > 0 && ( _results.length == 0 || ( _results.length == 1 && _results[0].length == 0 ) ) ) {
 		//remove title from _movies (for the case where you have to modify your search during order)
-		for ( var i=0; i<_movies.length; i++) { 
-			var movie = _movies[i];
-			if ( movie.title == thismovie.title ) {
-				console.log(i);
-				console.log(movie);
-				_movies.splice(i,1);
-				i--;
-			}
-		};
-		document.getElementById('tmp_movies').innerHTML = JSON.stringify(_movies);
+		//still wrong: same screenings get re-presented with fewer combinations; have to remove the screenings as well!
+		if ( thismovie_array.length > 1 ) {
+			_removedtitles.push(thismovie.title);
+			document.getElementById('tmp_removedtitles').innerHTML = JSON.stringify(_removedtitles);
+		} else {
+			_titles.splice(_titles.indexOf(thismovie.title),1);
+			document.getElementById('tmp_titles').innerHTML = JSON.stringify(_titles);
+		}
+		getMovies(true);
 		//add title to unavailablehidden
 		_unavailable = JSON.parse(document.getElementById('tmp_unavailable').innerHTML);
 		_unavailable.push(thismovie.title);
